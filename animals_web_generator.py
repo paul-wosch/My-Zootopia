@@ -3,7 +3,8 @@ import json
 JSON_DATA = "animals_data.json"
 TEMPLATE_FILE = "animals_template.html"
 NEW_FILE = "animals.html"
-PLACEHOLDER = "__REPLACE_ANIMALS_INFO__"
+PLACEHOLDER = "            __REPLACE_ANIMALS_INFO__"
+INDENTATION = "    "
 
 def load_data(file_path):
     """Load a JSON file."""
@@ -30,11 +31,31 @@ def get_animal_basics(animal):
 
 
 def get_formated_animal_basics(animal_basics):
-    """Create formatted output for animal basics."""
+    """Return formatted animal basics."""
     output = "\n".join(f"{key.title()}: {value}"
                        for key, value
                        in animal_basics.items()
                        if value)
+    return output
+
+
+def indent(n):
+    """Return n indentations."""
+    return INDENTATION * n
+
+
+def serialize_animal_basics_to_html(animal_basics):
+    """Return animal basics serialized as HTML."""
+    html_tags = {"li": ["<li class='cards__item'>", "</li>"],
+                     "br": "<br/>"}
+    output = ""
+    output += indent(3) + html_tags["li"][0]
+    output += f"\n{indent(3)}"
+    output += f"\n{indent(3)}".join(f"{key.title()}: {value}{html_tags['br']}"
+                                     for key, value
+                                     in animal_basics.items()
+                                     if value)
+    output += "\n" + indent(3) + html_tags["li"][1]
     return output
 
 
@@ -53,6 +74,16 @@ def get_all_animal_basics(animals):
     for animal in animals:
         animal_basics = get_animal_basics(animal)
         output += get_formated_animal_basics(animal_basics) + "\n\n"
+    return output
+
+
+def serialize_all_animal_basics_to_html(animals):
+    """Return basic information for each animal
+    for the given json animal data serialized as HTML."""
+    output = ""
+    for animal in animals:
+        animal_basics = get_animal_basics(animal)
+        output += serialize_animal_basics_to_html(animal_basics) + "\n"
     return output
 
 
@@ -79,7 +110,7 @@ def render_html_file(template_file, new_file, content):
 def main():
     """Generate our HTML file here."""
     animals_data = load_data(JSON_DATA)
-    content = get_all_animal_basics(animals_data)
+    content = serialize_all_animal_basics_to_html(animals_data)
     render_html_file(TEMPLATE_FILE, NEW_FILE, content)
 
 
