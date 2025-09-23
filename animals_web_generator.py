@@ -1,10 +1,17 @@
 import json
+from fileinput import close
 
 JSON_DATA = "animals_data.json"
 TEMPLATE_FILE = "animals_template.html"
 NEW_FILE = "animals.html"
 PLACEHOLDER = "            __REPLACE_ANIMALS_INFO__"
 INDENTATION = "    "
+HTML_TAGS = {"li": ["<li class='cards__item'>", "</li>"],
+             "br": ["<br/>"],
+             "div": ["<div class='card__title'>", "</div>"],
+             "p": ["<p class='card__text'>", "</p>"],
+             "strong": ["<strong>", "</strong>"]}
+
 
 def load_data(file_path):
     """Load a JSON file."""
@@ -44,37 +51,43 @@ def indent(n):
     return INDENTATION * n
 
 
+def get_html_snippet(tag, content=None, close=False, indentation=0):
+    """Return the html code for a given element."""
+    # use opening or closing tag
+    if close == False:
+        index = 0
+    else:
+        index = 1
+    if content:
+        return f"{indent(indentation) + HTML_TAGS[tag][0] + content + HTML_TAGS[tag][1]}"
+    return f"{indent(indentation) + HTML_TAGS[tag][index]}"
+
+
 def serialize_animal_basics_to_html(animal_basics):
     """Return animal basics serialized as HTML."""
-    html_tags = {"li": ["<li class='cards__item'>", "</li>"],
-                 "br": "<br/>",
-                 "div": ["<div class='card__title'>", "</div>"],
-                 "p": ["<p class='card__text'>", "</p>"],
-                 "strong": ["<strong>", "</strong>"]}
     output = ""
     # open 'li' element
-    output += indent(3) + html_tags["li"][0]
+    output += get_html_snippet("li", indentation=3)
     # open and close 'div' element
-    output += ("\n"
-               + indent(4)
-               + html_tags["div"][0]
-               + animal_basics["name"]
-               + html_tags["div"][1])
+    output += "\n" + get_html_snippet("div",
+                                      indentation=4,
+                                      content=animal_basics["name"]
+                                      )
     # open 'p' element
-    output += "\n" + indent(4) + html_tags["p"][0]
+    output += "\n" + get_html_snippet("p", indentation=4)
     # each line ends with a 'br' element
     # ...and each key is enclosed by a 'strong' element
     output += f"\n{indent(5)}"
-    output += f"\n{indent(5)}".join(f"{html_tags['strong'][0]}"
-                                    f"{key.title()}{html_tags['strong'][1]}: "
-                                    f"{value}{html_tags['br']}"
-                                     for key, value
-                                     in animal_basics.items()
-                                     if not key == "name" and value)
+    output += f"\n{indent(5)}".join(f"{get_html_snippet('strong', content=key.title()  + ':')} "
+                                    f"{value}"
+                                    f"{get_html_snippet('br')}"
+                                    for key, value
+                                    in animal_basics.items()
+                                    if not key == "name" and value)
     # close 'p' element
-    output += "\n" + indent(4) + html_tags["p"][1]
+    output += "\n" + get_html_snippet("p", indentation=4, close=True)
     # close 'li' element
-    output += "\n" + indent(3) + html_tags["li"][1]
+    output += "\n" + get_html_snippet("li", indentation=3, close=True)
 
     return output
 
