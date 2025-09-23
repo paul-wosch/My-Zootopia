@@ -16,7 +16,7 @@ def get_animal_basics(animal):
     # initialize dictionary
     animal_basics = {"name": "",
                      "diet": "",
-                     "first_location": "",
+                     "location": "",
                      "type": ""
                      }
     # populate dictionary
@@ -24,7 +24,7 @@ def get_animal_basics(animal):
     animal_basics["diet"] = animal["characteristics"].get("diet", "")
     animal_basics["type"] = animal["characteristics"].get("type", "")
     if animal["locations"]:
-        animal_basics["locations"] = animal["locations"][0]
+        animal_basics["location"] = animal["locations"][0]
 
     return animal_basics
 
