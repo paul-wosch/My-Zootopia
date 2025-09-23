@@ -47,15 +47,35 @@ def indent(n):
 def serialize_animal_basics_to_html(animal_basics):
     """Return animal basics serialized as HTML."""
     html_tags = {"li": ["<li class='cards__item'>", "</li>"],
-                     "br": "<br/>"}
+                 "br": "<br/>",
+                 "div": ["<div class='card__title'>", "</div>"],
+                 "p": ["<p class='card__text'>", "</p>"],
+                 "strong": ["<strong>", "</strong>"]}
     output = ""
+    # open 'li' element
     output += indent(3) + html_tags["li"][0]
-    output += f"\n{indent(3)}"
-    output += f"\n{indent(3)}".join(f"{key.title()}: {value}{html_tags['br']}"
+    # open and close 'div' element
+    output += ("\n"
+               + indent(4)
+               + html_tags["div"][0]
+               + animal_basics["name"]
+               + html_tags["div"][1])
+    # open 'p' element
+    output += "\n" + indent(4) + html_tags["p"][0]
+    # each line ends with a 'br' element
+    # ...and each key is enclosed by a 'strong' element
+    output += f"\n{indent(5)}"
+    output += f"\n{indent(5)}".join(f"{html_tags['strong'][0]}"
+                                    f"{key.title()}{html_tags['strong'][1]}: "
+                                    f"{value}{html_tags['br']}"
                                      for key, value
                                      in animal_basics.items()
-                                     if value)
+                                     if not key == "name" and value)
+    # close 'p' element
+    output += "\n" + indent(4) + html_tags["p"][1]
+    # close 'li' element
     output += "\n" + indent(3) + html_tags["li"][1]
+
     return output
 
 
