@@ -5,6 +5,14 @@ TEMPLATE_FILE = "animals_template.html"
 NEW_FILE = "animals.html"
 PLACEHOLDER = "            __REPLACE_ANIMALS_INFO__"
 INDENTATION = "    "
+# Choose here, which fields to display beside animal name from JSON data.
+# Usage: {<field name to display>: (<node>, <nested node>), ...}
+SELECTED_FIELDS = {"diet": ("characteristics", "diet"),
+                   "locations": ("locations",),
+                   "type": ("characteristics", "type"),
+                   "scientific name": ("taxonomy", "scientific_name"),
+                   "skin type": ("characteristics", "skin_type")
+                   }
 
 
 def load_data(file_path):
@@ -15,22 +23,25 @@ def load_data(file_path):
 
 def initialize_animal_obj():
     """Initialize and return preprocessed animal object."""
-    animal_obj = {"name": "",
-                  "diet": "",
-                  "location": "",
-                  "type": ""
-                  }
+    animal_obj = {}
+    for field in SELECTED_FIELDS:
+        animal_obj[field] = ""
     return animal_obj
 
 
 def populate_animal_obj(animal):
     """Return populated animal object."""
     animal_obj = initialize_animal_obj()
+    keys = [key for key in animal_obj.keys()]
     animal_obj["name"] = animal["name"]
-    animal_obj["diet"] = animal["characteristics"].get("diet", "")
-    animal_obj["type"] = animal["characteristics"].get("type", "")
-    if animal["locations"]:
-        animal_obj["location"] = animal["locations"][0]
+    # dispatch key names to JSON nodes
+    for key in keys:
+        # treat special case where value is a list like in 'locations'
+        if len(SELECTED_FIELDS[key]) > 1:
+            animal_obj[key] = animal[SELECTED_FIELDS[key][0]].get(SELECTED_FIELDS[key][1], "")
+        else:
+            animal_obj[key] = ", ".join(animal[SELECTED_FIELDS[key][0]])
+
     return animal_obj
 
 
@@ -55,10 +66,7 @@ def indent(n):
 
 
 def serialize_animal_to_html(animal_obj):
-    """Return animal information serialized as HTML.
-
-    Simplified version using strings with plain HTML.
-    """
+    """Return animal information serialized as HTML."""
     output = ''
     output += f'{indent(3)}<li class="cards__item">'
     output += f'\n{indent(4)}<div class="card__title">{animal_obj["name"]}</div>'
@@ -76,14 +84,19 @@ def serialize_animal_to_html(animal_obj):
     return output
 
 
-def serialize_all_animals_to_html(animals):
+def serialize_all_animals_to_html(animals, skin_type):
     """Return basic information for each animal
     for the given json animal data serialized as HTML."""
     output = ""
-    for animal in animals:
-        animal_obj = get_animal(animal)
-        # output += serialize_animal_to_html_old(animal_obj) + "\n"
-        output += serialize_animal_to_html(animal_obj) + "\n"
+    if not skin_type:
+        for animal in animals:
+            animal_obj = get_animal(animal)
+            output += serialize_animal_to_html(animal_obj) + "\n"
+    else:
+        for animal in animals:
+            if animal["characteristics"]["skin_type"] == skin_type:
+                animal_obj = get_animal(animal)
+                output += serialize_animal_to_html(animal_obj) + "\n"
     return output
 
 
@@ -107,10 +120,29 @@ def write_html_file(template_file, new_file, content):
     write_file(new_file, html_new)
 
 
+def get_skin_types(animals):
+    """Return a set of all skin types from the given JSON animal data."""
+    return set(animal["characteristics"]["skin_type"] for animal in animals)
+
+
+def ask_for_skin_type(animals):
+    """Ask the user to filter the list for a specific skin type."""
+    print("Include only animals with the selected skin type.")
+    skin_types = get_skin_types(animals)
+    skin_types_str = ", ".join(f"'{skin_type}'" for skin_type in skin_types)
+    while True:
+        skin_type = input(f"Enter {skin_types_str} or leave empty for no filtering: ").strip().title()
+        if skin_type in skin_types or skin_type == "":
+            break
+        print(f"Invalid skin type.")
+    return skin_type
+
+
 def main():
-    """Generate our HTML file here."""
+    """Ask for skin filter and generate HTML file."""
     animals_data = load_data(JSON_DATA)
-    content = serialize_all_animals_to_html(animals_data)
+    skin_type = ask_for_skin_type(animals_data)
+    content = serialize_all_animals_to_html(animals_data, skin_type)
     write_html_file(TEMPLATE_FILE, NEW_FILE, content)
 
 
