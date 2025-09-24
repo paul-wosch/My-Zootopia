@@ -1,3 +1,4 @@
+"""Generate HTML file from JSON structured animal data for selected fields."""
 import json
 
 JSON_DATA = "animals_data.json"
@@ -17,7 +18,7 @@ SELECTED_FIELDS = {"diet": ("characteristics", "diet"),
 
 def load_data(file_path):
     """Load a JSON file."""
-    with open(file_path, "r") as handle:
+    with open(file_path, "r", encoding="utf-8") as handle:
         return json.load(handle)
 
 
@@ -32,7 +33,7 @@ def initialize_animal_obj():
 def populate_animal_obj(animal):
     """Return populated animal object."""
     animal_obj = initialize_animal_obj()
-    keys = [key for key in animal_obj.keys()]
+    keys = list(animal_obj.keys())
     animal_obj["name"] = animal["name"]
     # dispatch key names to JSON nodes
     for key in keys:
@@ -131,10 +132,11 @@ def ask_for_skin_type(animals):
     skin_types = get_skin_types(animals)
     skin_types_str = ", ".join(f"'{skin_type}'" for skin_type in skin_types)
     while True:
-        skin_type = input(f"Enter {skin_types_str} or leave empty for no filtering: ").strip().title()
+        skin_type = input(f"Enter {skin_types_str} or leave empty for "
+                          f"no filtering: ").strip().title()
         if skin_type in skin_types or skin_type == "":
             break
-        print(f"Invalid skin type.")
+        print("Invalid skin type.")
     return skin_type
 
 
