@@ -1,16 +1,10 @@
 import json
-from fileinput import close
 
 JSON_DATA = "animals_data.json"
 TEMPLATE_FILE = "animals_template.html"
 NEW_FILE = "animals.html"
 PLACEHOLDER = "            __REPLACE_ANIMALS_INFO__"
 INDENTATION = "    "
-HTML_TAGS = {"li": ["<li class='cards__item'>", "</li>"],
-             "br": ["<br/>"],
-             "div": ["<div class='card__title'>", "</div>"],
-             "p": ["<p class='card__text'>", "</p>"],
-             "strong": ["<strong>", "</strong>"]}
 
 
 def load_data(file_path):
@@ -19,29 +13,38 @@ def load_data(file_path):
         return json.load(handle)
 
 
-def get_animal_basics(animal):
-    """Return name, diet, first location and type for a given animal"""
-    # initialize dictionary
-    animal_basics = {"name": "",
-                     "diet": "",
-                     "location": "",
-                     "type": ""
-                     }
-    # populate dictionary
-    animal_basics["name"] = animal["name"]
-    animal_basics["diet"] = animal["characteristics"].get("diet", "")
-    animal_basics["type"] = animal["characteristics"].get("type", "")
+def initialize_animal_obj():
+    """Initialize and return preprocessed animal object."""
+    animal_obj = {"name": "",
+                  "diet": "",
+                  "location": "",
+                  "type": ""
+                  }
+    return animal_obj
+
+
+def populate_animal_obj(animal):
+    """Return populated animal object."""
+    animal_obj = initialize_animal_obj()
+    animal_obj["name"] = animal["name"]
+    animal_obj["diet"] = animal["characteristics"].get("diet", "")
+    animal_obj["type"] = animal["characteristics"].get("type", "")
     if animal["locations"]:
-        animal_basics["location"] = animal["locations"][0]
+        animal_obj["location"] = animal["locations"][0]
+    return animal_obj
 
-    return animal_basics
+
+def get_animal(animal):
+    """Return name and details for a given animal."""
+    animal_obj = populate_animal_obj(animal)
+    return animal_obj
 
 
-def get_formated_animal_basics(animal_basics):
+def get_formated_animal(animal_obj):
     """Return formatted animal basics."""
     output = "\n".join(f"{key.title()}: {value}"
                        for key, value
-                       in animal_basics.items()
+                       in animal_obj.items()
                        if value)
     return output
 
@@ -51,72 +54,36 @@ def indent(n):
     return INDENTATION * n
 
 
-def get_html_snippet(tag, content=None, close=False, indentation=0):
-    """Return the html code for a given element."""
-    # use opening or closing tag
-    if close == False:
-        index = 0
-    else:
-        index = 1
-    if content:
-        return f"{indent(indentation) + HTML_TAGS[tag][0] + content + HTML_TAGS[tag][1]}"
-    return f"{indent(indentation) + HTML_TAGS[tag][index]}"
+def serialize_animal_to_html(animal_obj):
+    """Return animal information serialized as HTML.
 
-
-def serialize_animal_basics_to_html(animal_basics):
-    """Return animal basics serialized as HTML."""
-    output = ""
-    # open 'li' element
-    output += get_html_snippet("li", indentation=3)
-    # open and close 'div' element
-    output += "\n" + get_html_snippet("div",
-                                      indentation=4,
-                                      content=animal_basics["name"]
-                                      )
-    # open 'p' element
-    output += "\n" + get_html_snippet("p", indentation=4)
-    # each line ends with a 'br' element
-    # ...and each key is enclosed by a 'strong' element
-    output += f"\n{indent(5)}"
-    output += f"\n{indent(5)}".join(f"{get_html_snippet('strong', content=key.title()  + ':')} "
-                                    f"{value}"
-                                    f"{get_html_snippet('br')}"
+    Simplified version using strings with plain HTML.
+    """
+    output = ''
+    output += f'{indent(3)}<li class="cards__item">'
+    output += f'\n{indent(4)}<div class="card__title">{animal_obj["name"]}</div>'
+    output += f'\n{indent(4)}<div class="card__text">'
+    output += f'\n{indent(5)}<ul class="cards">'
+    output += f'\n{indent(6)}'
+    output += f'\n{indent(6)}'.join(f'<li><strong>{key.title()}:</strong> {value}</li>'
                                     for key, value
-                                    in animal_basics.items()
+                                    in animal_obj.items()
                                     if not key == "name" and value)
-    # close 'p' element
-    output += "\n" + get_html_snippet("p", indentation=4, close=True)
-    # close 'li' element
-    output += "\n" + get_html_snippet("li", indentation=3, close=True)
+    output += f'\n{indent(5)}</ul>'
+    output += f'\n{indent(4)}</div>'
+    output += f'\n{indent(3)}</li>'
 
     return output
 
 
-def print_all_animal_basics(animals):
-    """Print basic information for each animal
-    for the given json animal data."""
-    for animal in animals:
-        animal_basics = get_animal_basics(animal)
-        print(get_formated_animal_basics(animal_basics) + "\n")
-
-
-def get_all_animal_basics(animals):
-    """Return basic information for each animal
-    for the given json animal data as string."""
-    output = ""
-    for animal in animals:
-        animal_basics = get_animal_basics(animal)
-        output += get_formated_animal_basics(animal_basics) + "\n\n"
-    return output
-
-
-def serialize_all_animal_basics_to_html(animals):
+def serialize_all_animals_to_html(animals):
     """Return basic information for each animal
     for the given json animal data serialized as HTML."""
     output = ""
     for animal in animals:
-        animal_basics = get_animal_basics(animal)
-        output += serialize_animal_basics_to_html(animal_basics) + "\n"
+        animal_obj = get_animal(animal)
+        # output += serialize_animal_to_html_old(animal_obj) + "\n"
+        output += serialize_animal_to_html(animal_obj) + "\n"
     return output
 
 
@@ -133,8 +100,8 @@ def write_file(file_name, content):
         file_obj.write(content)
 
 
-def render_html_file(template_file, new_file, content):
-    """Render a new html file for the given content."""
+def write_html_file(template_file, new_file, content):
+    """Write a new html file for the given content."""
     html_template = load_template(template_file)
     html_new = html_template.replace(PLACEHOLDER, content)
     write_file(new_file, html_new)
@@ -143,8 +110,8 @@ def render_html_file(template_file, new_file, content):
 def main():
     """Generate our HTML file here."""
     animals_data = load_data(JSON_DATA)
-    content = serialize_all_animal_basics_to_html(animals_data)
-    render_html_file(TEMPLATE_FILE, NEW_FILE, content)
+    content = serialize_all_animals_to_html(animals_data)
+    write_html_file(TEMPLATE_FILE, NEW_FILE, content)
 
 
 if __name__ == "__main__":
